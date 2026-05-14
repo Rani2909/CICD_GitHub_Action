@@ -1,83 +1,70 @@
-📌 DevOps CI/CD Pipeline Project (Docker + Kubernetes + Terraform + AWS)
-🚀 Project Overview
+**🚀 DevOps CI/CD + Terraform + Docker + Kubernetes Project
+📌 Project Overview**
+This project demonstrates a complete DevOps workflow including:
+Infrastructure provisioning using Terraform (AWS EC2)
+Application containerization using Docker
+Deployment on Kubernetes (k3s cluster on EC2)
+Simple Flask application
+Git-based version control (GitHub)
 
-This project demonstrates a complete DevOps CI/CD pipeline using modern tools like Terraform, AWS EC2, Docker, and Kubernetes (K3s).
+The goal of this project is to simulate a real-world CI/CD pipeline + cloud deployment workflow using AWS and open-source DevOps tools.
 
-It automates infrastructure provisioning, application containerization, and deployment of a simple Python Flask application.
+**🏗️ Architecture Flow**
+Developer → GitHub → Terraform → AWS EC2 → Docker → Kubernetes (k3s) → Application Running
 
-🏗️ Architecture Flow
-Developer → GitHub → CI/CD (Jenkins/GitHub Actions)
-        → Docker Image Build
-        → Push to EC2 Server
-        → Kubernetes (K3s) Deployment
-        → Application Running on Browser
-
-⚙️ Technologies Used
+**🧰 Technologies Used**
 AWS EC2 (Cloud Infrastructure)
 Terraform (Infrastructure as Code)
-Linux (Amazon Linux 2023)
 Docker (Containerization)
-Kubernetes (K3s lightweight cluster)
-Python Flask (Application)
+Kubernetes (k3s lightweight cluster)
+Flask (Python Web Application)
 Git & GitHub (Version Control)
+Amazon Linux 2023
 
-📁 Project Structure
-CI_CD_Project/
+**📁 Project Structure**
+CI_CD_May26/
 │
 ├── Terraform/
 │   ├── main.tf
 │   ├── variables.tf
 │   ├── outputs.tf
+│   ├── .gitignore
 │
 ├── app/
 │   ├── app.py
 │   ├── requirements.txt
 │   ├── Dockerfile
 │
-├── kubernetes/
-│   ├── deployment.yaml
-│   ├── service.yaml
-│
 └── README.md
 
-☁️ Step 1: Infrastructure Provisioning (Terraform)
+**⚙️ Step 1: Infrastructure Setup (Terraform)**
 
-Terraform is used to create AWS infrastructure automatically.
+Terraform is used to automatically create AWS infrastructure.
 
-Features:
-EC2 instance creation
-Security group configuration
-Key pair generation
-Run Commands:
+**🔹 Resources Created:**
+EC2 Instance (Amazon Linux 2023)
+Security Group (SSH + HTTP access)
+Key Pair for SSH access
+**▶️ Commands:**
 cd Terraform
 terraform init
 terraform plan
 terraform apply
+**☁️ Step 2: AWS EC2 Setup**
 
-🖥️ Step 2: Connect to EC2
-ssh -i devops-key.pem ec2-user@<PUBLIC_IP>
+**After Terraform execution:**
 
-🐳 Step 3: Install Docker
-sudo yum update -y
-sudo yum install docker -y
-sudo systemctl start docker
-sudo systemctl enable docker
-sudo usermod -aG docker ec2-user
-newgrp docker
+EC2 instance is created
+Public IP is generated
+SSH access enabled using .pem key
+🔗 Connect to server:
+ssh -i devops-key.pem ec2-user@<EC2-PUBLIC-IP>
 
-Verify:
+**🐳 Step 3: Docker Setup (Application Containerization)**
 
-docker --version
+A simple Flask application is containerized using Docker.
 
-☸️ Step 4: Install Kubernetes (K3s)
-curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--disable traefik" sh -
-
-Check cluster:
-
-sudo k3s kubectl get nodes
-
-🐍 Step 5: Flask Application
-app.py
+📄 app.py
 from flask import Flask
 
 app = Flask(__name__)
@@ -88,38 +75,44 @@ def home():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
-📦 requirements.txt
+    
+**📄 requirements.txt**
 flask
 
-🐳 Step 6: Dockerfile
+**📄 Dockerfile**
 FROM python:3.9-slim
-
 WORKDIR /app
-
 COPY requirements.txt .
-
-RUN pip install -r requirements.txt
-
+RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
-
+EXPOSE 5000
 CMD ["python", "app.py"]
 
-🔨 Step 7: Build & Run Docker Image
+▶️ Build Docker Image
 docker build -t flask-app .
+▶️ Run Container
 docker run -d -p 5000:5000 flask-app
 
-Test:
+**☸️ Step 4: Kubernetes (k3s) Setup**
 
-curl localhost:5000
+k3s (lightweight Kubernetes) is installed on EC2.
 
-☸️ Step 8: Kubernetes Deployment (K3s)
-deployment.yaml
+▶️ Check cluster:
+sudo k3s kubectl get nodes
+
+Expected output:
+Ready    control-plane
+
+▶️ Deploy application (optional enhancement)
+
+Deploy Docker container in Kubernetes using YAML:
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: flask-app
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: flask-app
@@ -133,42 +126,53 @@ spec:
         image: flask-app
         ports:
         - containerPort: 5000
-service.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: flask-service
-spec:
-  type: NodePort
-  selector:
-    app: flask-app
-  ports:
-    - port: 5000
-      targetPort: 5000
-      nodePort: 30007
+        
+**🔐 Security Best Practices**
+.terraform/ folder excluded using .gitignore
+No AWS keys stored in GitHub
+Sensitive files like .tfstate are ignored
+SSH key used for secure EC2 access
 
-🚀 Deploy to Kubernetes
-sudo k3s kubectl apply -f deployment.yaml
-sudo k3s kubectl apply -f service.yaml
+**🚨 Issues Faced & Fixes**
+❌ Issue 1: Terraform push failed (large files)
+Cause: .terraform providers > 800MB
+Fix: Added .gitignore and removed history
+❌ Issue 2: Docker build failed
+Cause: Incorrect Flask requirement (flask~)
+Fix: Corrected to flask
+❌ Issue 3: Kubernetes not starting
+Fix: Restarted k3s service and verified cluster
 
-Check pods:
-sudo k3s kubectl get pods
+**🎯 Key Learnings**
+Terraform best practices for AWS provisioning
+Importance of .gitignore in DevOps projects
+Docker containerization workflow
+Kubernetes cluster setup using k3s
+Debugging cloud + CI/CD issues
+Git history cleanup techniques
 
-🌐 Access Application
-http://<EC2_PUBLIC_IP>:30007
-
-📊 Future Improvements
-CI/CD automation using Jenkins
-Docker image push to AWS ECR
+**🚀 Future Improvements**
+CI/CD pipeline using GitHub Actions or Jenkins
+Terraform remote backend 
 Prometheus + Grafana monitoring
-Helm charts for deployment
-Multi-node Kubernetes cluster
+Load balancing using Nginx ingress
+Multi-environment setup (Dev / Prod)
 
+**👨‍💻 Author **
 
-⭐ Conclusion
-This project demonstrates:
-Infrastructure as Code (Terraform)
-Containerization (Docker)
-Orchestration (Kubernetes K3s)
-Cloud deployment (AWS EC2)
-End-to-end DevOps workflow
+DevOps Engineer Portfolio Project by Ambedkar Rani Subbiah
+
+**Built for learning:**
+
+Cloud Infrastructure (AWS)
+CI/CD Automation
+Kubernetes Deployment
+Real-world DevOps workflows
+
+**⭐ Result**
+
+✔ Infrastructure created using Terraform
+✔ Application containerized using Docker
+✔ Deployed on Kubernetes (k3s)
+✔ Clean GitHub repository
+✔ End-to-end DevOps pipeline simulated
